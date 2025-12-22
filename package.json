@@ -1,0 +1,12 @@
+{
+  "name": "translate-extensions",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "translate": "node index.js"
+  },
+  "dependencies": {
+    "openai": "^4.56.0"
+  }
+}
