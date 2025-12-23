@@ -2,14 +2,7 @@
 import fs from "fs/promises";
 import path from "path";
 import OpenAI from "openai";
-import {
-  settings,
-  languages,
-  outputDir,
-  throttleMs,
-  maxRetries,
-  retryBaseDelayMs,
-} from "./translation-settings.js";
+import { settings, languages, outputDir, throttleMs, maxRetries, retryBaseDelayMs } from "./translation-settings.js";
 
 const API_KEY = "PASTE_YOUR_OPENAI_API_KEY_HERE";
 const DEFAULT_OUT_DIR = "_locales";
@@ -19,12 +12,7 @@ const DEFAULT_MAX_RETRIES = 4;
 const DEFAULT_RETRY_BASE_DELAY_MS = 2000;
 
 function validateSettings(settings) {
-  const requiredFields = [
-    "name",
-    "short_description",
-    "full_description",
-    "main_keyword",
-  ];
+  const requiredFields = ["name", "short_description", "full_description", "main_keyword"];
   for (const field of requiredFields) {
     if (!settings || typeof settings[field] !== "string" || !settings[field].trim()) {
       throw new Error(`settings.${field} must be a non-empty string.`);
@@ -79,11 +67,7 @@ function sleep(ms) {
 
 function isRateLimitError(error) {
   const message = String(error?.message || "");
-  return (
-    error?.status === 429 ||
-    error?.code === "rate_limit_exceeded" ||
-    message.toLowerCase().includes("rate limit")
-  );
+  return error?.status === 429 || error?.code === "rate_limit_exceeded" || message.toLowerCase().includes("rate limit");
 }
 
 function getRetryAfterMs(error) {
@@ -100,9 +84,7 @@ function getRetryAfterMs(error) {
 
 async function runWithRetries(fn, options) {
   const retries =
-    Number.isFinite(options?.maxRetries) && options.maxRetries >= 0
-      ? options.maxRetries
-      : DEFAULT_MAX_RETRIES;
+    Number.isFinite(options?.maxRetries) && options.maxRetries >= 0 ? options.maxRetries : DEFAULT_MAX_RETRIES;
   const baseDelay =
     Number.isFinite(options?.retryBaseDelayMs) && options.retryBaseDelayMs > 0
       ? options.retryBaseDelayMs
@@ -127,10 +109,13 @@ async function runWithRetries(fn, options) {
 
 async function translateSettings(client, settings, language) {
   const prompt = [
-    "You are a professional localization translator for Chrome Web Store listings.",
-    "Translate the fields into the target language with natural, native-sounding phrasing.",
-    "Preserve meaning, SEO intent, and readability.",
-    "Keep the main keyword present in the translation (translate or adapt it naturally).",
+    `Please ignore all previous instructions. Please respond only in the ${language.language} language. 
+    Do not explain what you are doing. Do not self reference. You are an expert translator. 
+    Translate the following text to ${language.language} using vocabulary and expressions of a native of ${language.language}. 
+    Adapt the translation to native ${language.language} text. You can change the phrases slightly to make them sound more natural. 
+    Avoid literal translation, which may look strange to ${language.language} speakers. Save the keyword “${settings.main_keyword}”, 
+    natively adapted for SEO, it can be slightly changed, the main thing is that the translated result matches 
+    what users of the translation country are most often looking for. The text to be translated is`,
     "Strict limits: name must be at most 75 characters; short_description must be at most 132 characters.",
     "Return ONLY valid JSON with keys: name, short_description, full_description.",
   ].join(" ");
@@ -188,21 +173,18 @@ async function main() {
     apiKey: process.env.OPENAI_API_KEY || API_KEY,
   });
 
-  const resolvedOutDir =
-    typeof outputDir === "string" && outputDir.trim() ? outputDir : DEFAULT_OUT_DIR;
+  const resolvedOutDir = typeof outputDir === "string" && outputDir.trim() ? outputDir : DEFAULT_OUT_DIR;
   await ensureDir(resolvedOutDir);
-  const resolvedThrottleMs =
-    Number.isFinite(throttleMs) && throttleMs >= 0 ? throttleMs : DEFAULT_THROTTLE_MS;
+  const resolvedThrottleMs = Number.isFinite(throttleMs) && throttleMs >= 0 ? throttleMs : DEFAULT_THROTTLE_MS;
 
   for (const language of languages) {
-    const payload =
-      language.shouldTranslate
-        ? await translateSettings(client, settings, language)
-        : {
-            name: settings.name,
-            short_description: settings.short_description,
-            full_description: settings.full_description,
-          };
+    const payload = language.shouldTranslate
+      ? await translateSettings(client, settings, language)
+      : {
+          name: settings.name,
+          short_description: settings.short_description,
+          full_description: settings.full_description,
+        };
 
     const messages = buildMessages(payload);
     await writeMessages(resolvedOutDir, language.code, messages);
