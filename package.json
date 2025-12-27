@@ -7,6 +7,7 @@
     "translate": "node index.js"
   },
   "dependencies": {
+    "dotenv": "^17.2.3",
     "openai": "^4.56.0"
   }
 }
