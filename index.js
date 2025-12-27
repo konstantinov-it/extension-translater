@@ -31,6 +31,9 @@ function validateLanguages(languages) {
     if (typeof lang.language !== "string" || !lang.language.trim()) {
       throw new Error(`Language ${lang.code || ""} must include a language name.`);
     }
+    if (typeof lang.country !== "string" || !lang.country.trim()) {
+      throw new Error(`Language ${lang.code || ""} must include a country name.`);
+    }
     if (typeof lang.shouldTranslate !== "boolean") {
       lang.shouldTranslate = true;
     }
@@ -111,7 +114,7 @@ async function translateSettings(client, settings, language) {
   const prompt = [
     `Please ignore all previous instructions. Please respond only in the ${language.language} language. 
     Do not explain what you are doing. Do not self reference. You are an expert translator. 
-    Translate the following text to ${language.language} using vocabulary and expressions of a native of ${language.language}. 
+    Translate the following text to ${language.language} using vocabulary and expressions of a native of ${language.country}. 
     Adapt the translation to native ${language.language} text. You can change the phrases slightly to make them sound more natural. 
     Avoid literal translation, which may look strange to ${language.language} speakers. Save the keyword “${settings.main_keyword}”, 
     natively adapted for SEO, it can be slightly changed, the main thing is that the translated result matches 
